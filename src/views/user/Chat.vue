@@ -1,6 +1,6 @@
 <template>
-  <div class="page-user-chat">
-    <van-nav-bar fixed left-arrow @click-left="$router.back()" title="小智同学"></van-nav-bar>
+  <div class='container'>
+   <van-nav-bar fixed left-arrow @click-left="$router.back()" title="小智同学"></van-nav-bar>
   </div>
 </template>
 

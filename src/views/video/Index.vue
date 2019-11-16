@@ -1,8 +1,8 @@
 <template>
-  <div class="container">
-    <van-skeleton title :row="3" />
-    <van-skeleton title :row="3" />
-    <van-skeleton title :row="3" />
+  <div class='container'>
+    <van-skeleton title avatar :row="3" />
+    <van-skeleton title avatar :row="3" />
+    <van-skeleton title avatar :row="3" />
   </div>
 </template>
 
@@ -13,7 +13,7 @@ export default {
 </script>
 
 <style scoped lang='less'>
-.van-skeleton {
+.van-skeleton{
   margin-top: 10px;
 }
 </style>

@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <div class='container'>
+    <!-- 骨架屏 -->
     <van-skeleton title :row="3" />
     <van-skeleton title :row="3" />
     <van-skeleton title :row="3" />
@@ -12,8 +13,8 @@ export default {
 }
 </script>
 
-<style lang="less" scoped>
-.van-skeleton {
+<style scoped lang='less'>
+.van-skeleton{
   margin-top: 10px;
 }
 </style>

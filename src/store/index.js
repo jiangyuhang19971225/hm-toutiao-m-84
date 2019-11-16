@@ -1,32 +1,30 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-
 import * as auth from '@/utils/auth'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    // 用户信息（token refresh_token）
+    // 用户信息
     user: auth.getUser()
   },
   mutations: {
-    // 存储用户信息
+    // 修改用户  user传参必须是对象
     setUser (state, user) {
-      // 更新state的状态
+      // 修改了vuex中的state , 如果刷新了页面重新获取本地的数据, 会丢失之前存储state
+      // 所以：同时修改本地的用户信息
       state.user = user
-      // 更新本地存储
+      // 更新本地用户信息
       auth.setUser(user)
     },
-    // 清除用户信息
+    // 删除用户
     delUser (state) {
-      // 更新state的状态   清除vuex的信息
       state.user = {}
-      // 更新本地存储     清除本地的信息
+      // 删除本地用户信息
       auth.delUser()
     }
   },
   actions: {
-
   }
 })
