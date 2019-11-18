@@ -1,10 +1,11 @@
 <template>
   <div class="container">
     <!-- swipeable开启手势切换功能 -->
-    <van-tabs swipeable v-model="activeIndex">
+    <van-tabs @change="changeChannel" :lazy-render="false" swipeable v-model="activeIndex">
       <van-tab :key="channel.id" v-for="channel in myChannels" :title="channel.name">
         <!-- 滚动容器 -->
-        <div class="scroll-wrapper">
+        <div @scroll="remember($event)" ref="scroll-wrapper" class="scroll-wrapper">
+          <!-- $event事件对象  拿不同的位置 ref操作dom-->
           <van-pull-refresh
             v-model="activeChannel.downLoading"
             @refresh="onRefresh"
@@ -20,18 +21,18 @@
                 <div class="article_item">
                   <h3 class="van-ellipsis">{{item.title}}</h3>
                   <div class="img_box" v-if="item.cover.type===3">
-                    <van-image class="w33" fit="cover" :src="item.cover.images[0]" />
-                    <van-image class="w33" fit="cover" :src="item.cover.images[1]" />
-                    <van-image class="w33" fit="cover" :src="item.cover.images[2]" />
+                    <van-image lazy-load class="w33" fit="cover" :src="item.cover.images[0]" />
+                    <van-image lazy-load class="w33" fit="cover" :src="item.cover.images[1]" />
+                    <van-image lazy-load class="w33" fit="cover" :src="item.cover.images[2]" />
                   </div>
                   <div class="img_box" v-if="item.cover.type===1">
-                    <van-image class="w100" fit="cover" :src="item.cover.images[0]" />
+                    <van-image lazy-load class="w100" fit="cover" :src="item.cover.images[0]" />
                   </div>
                   <div class="info_box">
                     <span>{{item.aut_name}}</span>
                     <span>{{item.comm_count}}评论</span>
-                    <span>{{item.pubdate}}</span>
-                    <span class="close">
+                    <span>{{item.pubdate|relTime}}</span>
+                    <span class="close" @click="openMoreAcion" v-if="user.token">
                       <van-icon name="cross"></van-icon>
                     </span>
                   </div>
@@ -46,14 +47,20 @@
     <span class="bar_btn" slot="nav-right">
       <van-icon name="wap-nav"></van-icon>
     </span>
+    <!-- 使用组件 更多操作 components: { MoreAction }, 注册大写使用小写 -->
+    <more-action v-model="show" v-if="user.token"></more-action>
   </div>
 </template>
 
 <script>
 import { getMyChannels } from '@/api/channel'
 import { getArticles } from '@/api/article'
+import { mapState } from 'vuex'
+import MoreAction from './components/MoreAction'
+// mapState映射的数据必须在computed中
 export default {
   name: 'home-index',
+  components: { MoreAction },
   data () {
     return {
       // articles: [],
@@ -69,36 +76,93 @@ export default {
       // 我的频道数据
       myChannels: [],
       // 当前激活的频道索引
-      activeIndex: 0
+      activeIndex: 0,
+      // 记录阅读位置
+      scrollTop: 0,
+      show: false
     }
   },
   computed: {
     // 获取当前激活的频道对象
     activeChannel () {
       return this.myChannels[this.activeIndex]
+    },
+    ...mapState(['user'])
+  },
+  watch: {
+    user () {
+      // 更新当前频道 (默认激活推荐)
+      this.activeIndex = 0
+      this.getMyChannels()
+      this.onLoad()
     }
   },
+  // 组件初始化
   created () {
     // 获取频道数据
     this.getMyChannels()
   },
+  // 激活组件钩子(组件缓存才有)  初始化组件也会执行
+  activated () {
+    // 当前激活的频道的文章列表容器 scroll-wrapper 滚动之前记录的位置
+    // scrool-wrapper 有几个频道就有几个容器 是一个数组[dom,dom...]
+    if (this.$refs['scroll-wrapper']) {
+      const dom = this.$refs['scroll-wrapper'][this.activeIndex]
+      dom.scrollTop = this.activeChannel.scrollTop
+    }
+  },
   methods: {
+    // 打开对话框
+    openMoreAcion () {
+      this.show = true
+    },
+    // 记住移动的位置
+    remember (e) {
+      this.activeChannel.scrollTop = e.target.scrollTop
+    },
+    // 切换频道
+    changeChannel () {
+      // （当前频道无文章数据）自己来加载数据
+      if (!this.activeChannel.articles.length) {
+        // 显示加载中效果
+        this.activeChannel.upLoading = true
+        this.onLoad()
+      } else {
+        // 根据当前频道记录的位置进行移动(覆盖tab组件滚动到顶部功能)
+        // 我们滚动的操作一定需要在tab组件滚动操作之后执行
+        // 定时器解决问题  定时器里面的代码最后之星
+        // window.setTimeout(() => {
+        //   const dom = this.$refs['scroll-wrapper'][this.activeIndex]
+        //   dom.scrollTop = this.activeChannel.scrollTop
+        // })
+        // vue项目中  使用$nextTick() 下一帧
+        this.$nextTick(() => {
+          const dom = this.$refs['scroll-wrapper'][this.activeIndex]
+          dom.scrollTop = this.activeChannel.scrollTop
+        })
+      }
+    },
     async getMyChannels () {
       const data = await getMyChannels()
       // 渲染频道（标签页 tabs组件）
       // this.myChannels = data.channels
       // myChannels 每一项值包含 频道ID 频道名称
       // myChannels 每一项值包含 频道ID 频道名称 + 文章列表 + 正在加载 + 正在刷新 + 是否全部加载 + 时间戳
-      this.myChannels = data.channels.map(item => {
-        return {
-          id: item.id,
-          name: item.name,
-          articles: [],
-          upLoading: false,
-          downLoading: false,
-          finished: false,
-          timestamp: Date.now()
-        }
+      this.myChannels = [] // 清除tabs组件的缓存
+      this.$nextTick(() => {
+        this.myChannels = data.channels.map(item => {
+          return {
+            id: item.id,
+            name: item.name,
+            articles: [],
+            upLoading: false,
+            downLoading: false,
+            finished: false,
+            timestamp: Date.now(),
+            // 记录阅读位置
+            scrollTop: 0
+          }
+        })
       })
     },
     async onRefresh () {
@@ -125,6 +189,7 @@ export default {
       //   }
       // }, 1000)
       this.activeChannel.timestamp = Date.now()
+      await this.$sleep()
       const data = await getArticles(
         this.activeChannel.id,
         this.activeChannel.timestamp
@@ -166,6 +231,8 @@ export default {
 
       // 获取文章列表（组件初始化默认激活频道一定是：推荐）
       // 获取传参：当前频道的ID  时间戳
+      await this.$sleep()
+      // await  同步 $sleep引用
       const data = await getArticles(
         this.activeChannel.id,
         this.activeChannel.timestamp

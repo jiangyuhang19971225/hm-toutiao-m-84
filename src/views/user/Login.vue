@@ -2,8 +2,20 @@
   <div class="container">
     <van-nav-bar left-arrow @click-left="$router.back()" title="登录"></van-nav-bar>
     <van-cell-group>
-      <van-field @blur="checkMobile" :error-message="errMsg.mobile" v-model="loginForm.mobile" label="手机号" placeholder="请输入手机号" />
-      <van-field @blur="checkCode" :error-message="errMsg.code" v-model="loginForm.code" label="验证码" placeholder="请输入验证码">
+      <van-field
+        @blur="checkMobile"
+        :error-message="errMsg.mobile"
+        v-model="loginForm.mobile"
+        label="手机号"
+        placeholder="请输入手机号"
+      />
+      <van-field
+        @blur="checkCode"
+        :error-message="errMsg.code"
+        v-model="loginForm.code"
+        label="验证码"
+        placeholder="请输入验证码"
+      >
         <van-button class="p5" slot="button" size="mini" type="primary">发送验证码</van-button>
       </van-field>
     </van-cell-group>
@@ -24,8 +36,8 @@ export default {
     return {
       // 表单数据
       loginForm: {
-        mobile: '',
-        code: ''
+        mobile: '13911111111',
+        code: '246810'
       },
       // 错误提示
       errMsg: {
@@ -93,12 +105,12 @@ export default {
 </script>
 
 <style scoped lang='less'>
-.p5{
+.p5 {
   padding: 0 5px;
 }
-.btn_box{
+.btn_box {
   padding: 10px;
-  .van-button{
+  .van-button {
     height: 32px;
     line-height: 30px;
   }
