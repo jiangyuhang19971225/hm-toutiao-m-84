@@ -27,3 +27,25 @@ export const getArticles = (channelId, timestamp) => {
 //     with_top: 1
 //   })
 // }
+/**
+ * 对文章不喜欢
+ * @param {Integer,Obcjet} articleId -文章Id
+ */
+
+export const dislikes = (articleId) => {
+  return request('/app/v1_0/article/dislikes', 'post', {
+    target: articleId
+  })
+}
+
+/**
+ * 举报文章
+ * @param {BigInt} articleId -文章ID
+ * @param {Integer} type - 举报类型
+ */
+export const report = (articleId, type) => {
+  return request('app/v1_0/article/reports', 'post', {
+    target: articleId,
+    type
+  })
+}

@@ -32,7 +32,11 @@
                     <span>{{item.aut_name}}</span>
                     <span>{{item.comm_count}}评论</span>
                     <span>{{item.pubdate|relTime}}</span>
-                    <span class="close" @click="openMoreAcion" v-if="user.token">
+                    <span
+                      class="close"
+                      @click="openMoreAcion(item.art_id.toString())"
+                      v-if="user.token"
+                    >
                       <van-icon name="cross"></van-icon>
                     </span>
                   </div>
@@ -44,11 +48,24 @@
       </van-tab>
     </van-tabs>
     <!-- 频道按钮 -->
-    <span class="bar_btn" slot="nav-right">
+    <span class="bar_btn" @click="openChannelEdit" slot="nav-right">
       <van-icon name="wap-nav"></van-icon>
     </span>
     <!-- 使用组件 更多操作 components: { MoreAction }, 注册大写使用小写 -->
-    <more-action v-model="show" v-if="user.token"></more-action>
+    <more-action
+      v-model="show"
+      v-if="user.token"
+      :articleId="articleId"
+      @on-dislike="removeArticle"
+      @on-report="removeArticle"
+    ></more-action>
+    <!-- 使用组件：频道编辑 -->
+    <channel-edit
+      v-model="showChannelEdit"
+      :myChannels="myChannels"
+      :activeIndex.sync="activeIndex"
+      a.sync
+    ></channel-edit>
   </div>
 </template>
 
@@ -57,10 +74,11 @@ import { getMyChannels } from '@/api/channel'
 import { getArticles } from '@/api/article'
 import { mapState } from 'vuex'
 import MoreAction from './components/MoreAction'
+import ChannelEdit from './components/ChannelEdit'
 // mapState映射的数据必须在computed中
 export default {
   name: 'home-index',
-  components: { MoreAction },
+  components: { MoreAction, ChannelEdit },
   data () {
     return {
       // articles: [],
@@ -79,7 +97,12 @@ export default {
       activeIndex: 0,
       // 记录阅读位置
       scrollTop: 0,
-      show: false
+      show: false,
+      // 当前点击的文章id
+      articleId: null,
+
+      // 显示频道编辑
+      showChannelEdit: false
     }
   },
   computed: {
@@ -112,9 +135,16 @@ export default {
     }
   },
   methods: {
+    // 删除
+    removeArticle () {
+      const articles = this.activeChannel.articles
+      const index = articles.findIndex(item => item.art_id === this.articleId)
+      articles.splice(index, 1)
+    },
     // 打开对话框
-    openMoreAcion () {
+    openMoreAcion (id) {
       this.show = true
+      this.articleId = id
     },
     // 记住移动的位置
     remember (e) {
